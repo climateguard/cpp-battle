@@ -2,7 +2,9 @@
 
 #include "UnitId.hpp"
 #include "Position.hpp"
+#include "IAction.hpp"
 #include <string>
+#include <memory>
 
 namespace sw::core
 {
@@ -25,7 +27,6 @@ namespace sw::core
         virtual void takeDamage(int32_t damage) = 0;
         
         // Possibilities
-        virtual bool canMove() const = 0;
         virtual bool canAct() const = 0;
 
         // target to movenment control
@@ -36,6 +37,8 @@ namespace sw::core
         
         // actions
         virtual void performAction(IGameContext& context) = 0;
+        virtual void addAction(std::unique_ptr<IAction> action) = 0;
+        virtual const std::vector<std::unique_ptr<IAction>>& getActions() const = 0;
         
         // condition
         virtual bool isDead() const = 0;

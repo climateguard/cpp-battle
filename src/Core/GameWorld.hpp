@@ -34,11 +34,17 @@ namespace sw::core
         std::unordered_map<UnitId, IUnit*> _unitById;
 
     public:
+
+        EventLog& getEventLog() override { return _eventLog; }
+        uint64_t get_tick() const override { return _currentTick; }
+
         void createMap(uint32_t width, uint32_t height)
         {
             _map = GameMap(width, height);
             _eventLog.log(_currentTick, io::MapCreated{width, height});
         }
+
+        
 
         void spawnUnit(std::unique_ptr<IUnit> unit)
         {
@@ -61,7 +67,7 @@ namespace sw::core
         void setUnitMarchTarget(UnitId id, const Position& target)
         {
             auto* unit = findUnitById(id);
-            if (!unit || !unit->canMove())
+            if (!unit)
                 return;
 
             unit->setMarchTarget(target);
@@ -169,22 +175,6 @@ namespace sw::core
             return findUnitsInRange(pos, 1);
         }
 
-        void dealDamage(UnitId attackerId, UnitId targetId, uint32_t damage) override
-        {
-            auto* target = findUnitById(targetId);
-            if (!target || !target->hasHealth())
-                return;
-
-            target->takeDamage(static_cast<int32_t>(damage));
-            
-            _eventLog.log(_currentTick, io::UnitAttacked{
-                attackerId.value,
-                targetId.value,
-                damage,
-                static_cast<uint32_t>(std::max(0, target->getHealth()))
-            });
-        }
-
         
         void moveUnit(UnitId unitId, const Position& newPos) override
         {
@@ -223,6 +213,6 @@ namespace sw::core
                 pos.x,
                 pos.y
             });
-        }
+        }    
     };
 }

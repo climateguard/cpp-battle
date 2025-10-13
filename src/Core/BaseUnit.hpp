@@ -2,6 +2,7 @@
 
 #include "IUnit.hpp"
 #include <algorithm>
+#include "IAction.hpp"
 
 namespace sw::core
 {
@@ -12,15 +13,14 @@ namespace sw::core
         UnitId _id;
         Position _position; //current position
         int32_t _health{0};
-        bool _movable{true};  //static or movable unit
         
         //target to move
         bool _hasTarget{false};
         Position _targetPosition;
-
+        std::vector<std::unique_ptr<IAction>> _actions;
     public:
-        BaseUnit(UnitId id, Position pos, int32_t health, bool movable = true)
-            : _id(id), _position(pos), _health(health), _movable(movable)
+        BaseUnit(UnitId id, Position pos, int32_t health)
+            : _id(id), _position(pos), _health(health)
         {}
 
         // IUnit implementation
@@ -36,76 +36,44 @@ namespace sw::core
             _health -= damage;
         }
         
-        bool canMove() const override { return _movable; }
         bool isDead() const override { return _health <= 0; }
-        bool canAct() const override { return !isDead(); }
+        bool canAct() const override { return !isDead(); } 
 
-        void setMarchTarget(const Position& target)
+        void setMarchTarget(const Position& target) override
         {
             _hasTarget = true;
             _targetPosition = target;
         }
 
-        void clearMarchTarget()
+        void clearMarchTarget() override
         {
             _hasTarget = false;
         }
 
-        bool hasMarchTarget() const
+        bool hasMarchTarget() const override
         {
             return _hasTarget;
         }
 
-        Position getMarchTarget() const
+        Position getMarchTarget() const override
         {
             return _targetPosition;
         }
 
-    protected:
-        // Attempts to move the unit one step towards its march target
-        bool tryMoveTowardsTarget(IGameContext& context)
-        {
-            if (!_hasTarget || _position == _targetPosition)
-            {
-                if (_hasTarget)
-                {
-                    context.endMarch(_id, _position);
-                    clearMarchTarget();
-                }
-                return false;
+         void addAction(std::unique_ptr<IAction> action) override {
+                _actions.push_back(std::move(action));
             }
 
-            Position nextPos = calculateNextStep(_position, _targetPosition);
-            
-            if (!context.isValidPosition(nextPos) || context.findUnitAt(nextPos) != nullptr)
-            {
-                return false; // can't move
-            }
+    const std::vector<std::unique_ptr<IAction>>& getActions() const override {
+        return _actions;
+    }
 
-            context.moveUnit(_id, nextPos);
-            
-            //target achive
-            if (_position == _targetPosition)
-            {
-                context.endMarch(_id, _position);
-                clearMarchTarget();
-            }
-            
-            return true;
+    void performAction(IGameContext& ctx) override {
+        if (isDead()) return;
+        for (auto& act : _actions) {
+            if(act->execute(*this, ctx))
+                break;
         }
-
-        // Calculate next step position
-        Position calculateNextStep(const Position& from, const Position& to) const
-        {
-            Position next = from;
-            
-            if (from.x < to.x) next.x++;
-            else if (from.x > to.x) next.x--;
-            
-            if (from.y < to.y) next.y++;
-            else if (from.y > to.y) next.y--;
-            
-            return next; 
-        }
+    } 
     };
 }

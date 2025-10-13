@@ -27,5 +27,17 @@ namespace sw::core
             uint32_t dy = std::abs(static_cast<int32_t>(y) - static_cast<int32_t>(other.y));
             return std::max(dx, dy);
         }
+
+        Position stepTowards(const Position& target) const {
+            Position next = *this;
+
+            if (x < target.x) next.x += 1;
+            else if (x > target.x) next.x -= 1;
+
+            if (y < target.y) next.y += 1;
+            else if (y > target.y) next.y -= 1;
+
+            return next;
+        }
     };
 } 
