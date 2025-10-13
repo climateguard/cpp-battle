@@ -2,6 +2,7 @@
 #include <string>
 namespace sw::core
 {
+//Base interface for unit encapsulated characteristics into components. 
 class IComponent
     {
     public:
