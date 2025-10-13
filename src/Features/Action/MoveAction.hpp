@@ -26,7 +26,7 @@ public:
                 self.getPosition().x,
                 self.getPosition().y
             });
-            return true; // already at
+            return false; // already at
         }
         
         

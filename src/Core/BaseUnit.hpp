@@ -3,7 +3,7 @@
 #include "IUnit.hpp"
 #include <algorithm>
 #include "IAction.hpp"
-
+#include "../Features/Component/HealthComponent.hpp"
 namespace sw::core
 {
     // Base unit implemetation
@@ -12,15 +12,16 @@ namespace sw::core
     protected:
         UnitId _id;
         Position _position; //current position
-        int32_t _health{0};
+        
         
         //target to move
         bool _hasTarget{false};
         Position _targetPosition;
+        std::unordered_map<std::type_index, std::unique_ptr<IComponent>> _components;
         std::vector<std::unique_ptr<IAction>> _actions;
     public:
         BaseUnit(UnitId id, Position pos, int32_t health)
-            : _id(id), _position(pos), _health(health)
+            : _id(id), _position(pos)
         {}
 
         // IUnit implementation
@@ -28,15 +29,13 @@ namespace sw::core
         Position getPosition() const override { return _position; }
         void setPosition(const Position& pos) override { _position = pos; }
         
-        bool hasHealth() const override { return true; }
-        int32_t getHealth() const override { return _health; }
-        
-        void takeDamage(int32_t damage) override
+        bool isDead() const override
         {
-            _health -= damage;
+            if (auto* health = getComponent<sw::feature::HealthComponent>())
+                return health->getCurrent() <= 0;
+            return false; // no health comp no dead
         }
-        
-        bool isDead() const override { return _health <= 0; }
+
         bool canAct() const override { return !isDead(); } 
 
         void setMarchTarget(const Position& target) override
@@ -75,5 +74,29 @@ namespace sw::core
                 break;
         }
     } 
+
+    void addComponent(std::unique_ptr<IComponent> component) override
+        {
+            auto typeIdx = std::type_index(typeid(*component));
+            _components[typeIdx] = std::move(component);
+        }
+
+    protected:
+        IComponent* getComponentByType(std::type_index type) override
+        {
+            auto it = _components.find(type);
+            return (it != _components.end()) ? it->second.get() : nullptr;
+        }
+        
+        const IComponent* getComponentByType(std::type_index type) const override
+        {
+            auto it = _components.find(type);
+            return (it != _components.end()) ? it->second.get() : nullptr;
+        }
+        
+        void removeComponentByType(std::type_index type) override
+        {
+            _components.erase(type);
+        }
     };
 }

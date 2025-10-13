@@ -14,14 +14,13 @@ namespace sw::core
         uint32_t _width{};
         uint32_t _height{};
         
-        // Position to UnitId (for seach unit in map)
-        std::unordered_map<uint64_t, UnitId> _positionToUnit;
+        // Position -> список UnitId
+        std::unordered_map<uint64_t, std::vector<UnitId>> _positionToUnits;
 
     public:
         GameMap() = default;
         GameMap(uint32_t width, uint32_t height)
-            : _width(width), _height(height)
-        {}
+            : _width(width), _height(height) {}
 
         uint32_t getWidth() const { return _width; }
         uint32_t getHeight() const { return _height; }
@@ -34,27 +33,41 @@ namespace sw::core
         // place unit on game map
         void placeUnit(const Position& pos, UnitId id)
         {
-            _positionToUnit[positionToKey(pos)] = id;
+            _positionToUnits[positionToKey(pos)].push_back(id);
         }
 
-        // remove unit from game map
-        void removeUnit(const Position& pos)
+        void removeUnit(const Position& pos, UnitId id)
         {
-            _positionToUnit.erase(positionToKey(pos));
+            auto key = positionToKey(pos);
+            auto it = _positionToUnits.find(key);
+            if (it == _positionToUnits.end())
+                return;
+
+            auto& vec = it->second;
+            vec.erase(std::remove(vec.begin(), vec.end(), id), vec.end());
+            
+            if (vec.empty())
+                _positionToUnits.erase(it);
         }
 
-        // Move unit on game map
         void moveUnit(const Position& from, const Position& to, UnitId id)
         {
-            removeUnit(from);
+            removeUnit(from, id);
             placeUnit(to, id);
         }
 
-        // Get unit on position
-        UnitId getUnitAt(const Position& pos) const
+        UnitId getUnitAt(const Position& pos, UnitId id) const
         {
-            auto it = _positionToUnit.find(positionToKey(pos));
-            return (it != _positionToUnit.end()) ? it->second : UnitId{0};
+            auto it = _positionToUnits.find(positionToKey(pos));
+            if (it != _positionToUnits.end() && !it->second.empty())
+                return it->second[0];
+            return UnitId{0};
+        }
+
+        std::vector<UnitId> getAllUnitsAt(const Position& pos) const
+        {
+            auto it = _positionToUnits.find(positionToKey(pos));
+            return (it != _positionToUnits.end()) ? it->second : std::vector<UnitId>{};
         }
 
     private:

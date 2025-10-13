@@ -22,6 +22,7 @@ namespace sw::core
         // Unit search and etc
         virtual IUnit* findUnitAt(const Position& pos) = 0;
         virtual IUnit* findUnitById(UnitId id) = 0;
+        virtual std::vector<IUnit*> findUnitsAt(const Position& pos) = 0;
         virtual std::vector<IUnit*> findUnitsInRange(const Position& center, uint32_t range) = 0;
         virtual std::vector<IUnit*> findAdjacentUnits(const Position& pos) = 0;
 

@@ -5,7 +5,7 @@
 #include "../Core/RandomUtils.hpp"
 #include "Action/AttackAction.hpp"
 #include "Action/MoveAction.hpp"
-
+#include "Component/HealthComponent.hpp"
 namespace sw::feature {
 
 // attacks nearby enemies or moves towards the target
@@ -21,7 +21,7 @@ public:
           _strength(strength)
     {
         using namespace sw::feature::action;
-
+        addComponent(std::make_unique<HealthComponent>(health));
         // near attack
         addAction(std::make_unique<AttackAction>(_strength, 1, 1));
 

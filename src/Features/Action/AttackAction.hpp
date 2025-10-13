@@ -7,7 +7,7 @@
 #include "../../Core/RandomUtils.hpp"
 #include <vector>
 #include "../../IO/Events/UnitAttacked.hpp"
-
+#include "../Component/HealthComponent.hpp"
 
 namespace sw::feature::action {
 
@@ -33,7 +33,7 @@ public:
 
         const auto& pos = self.getPosition();
 
-        // если нужно — пропускаем атаку, если рядом враги
+        // skip, if need
         if (_skipIfEnemiesNearby) {
             auto adj = ctx.findUnitsInRange(pos, 1);
             for (auto* u : adj)
@@ -41,7 +41,7 @@ public:
                     return false;
         }
 
-        // выбираем цели в диапазоне [minRange, maxRange]
+        // collect targets in range
         std::vector<sw::core::IUnit*> targets;
         auto all = ctx.findUnitsInRange(pos, _maxRange);
         for (auto* u : all) {
@@ -49,22 +49,20 @@ public:
                 continue;
 
             uint32_t dist = static_cast<uint32_t>(pos.distanceTo(u->getPosition()));
-            if (dist >= _minRange && dist <= _maxRange)
+            if (dist >= _minRange && dist <= _maxRange && u->hasComponent<HealthComponent>())
                 targets.push_back(u);
         }
 
         if (targets.empty())
             return false;
-
         auto* target = sw::core::RandomUtils::selectRandom(targets);
-         if (!target->hasHealth())
-                return false;
-        target->takeDamage(_damage);
+        auto* health = target->getComponent<HealthComponent>();
+        health->takeDamage(_damage);
         ctx.logEvent(io::UnitAttacked{
                 self.getId().value,
                 target->getId().value,
                 _damage,
-                static_cast<uint32_t>(std::max(0, target->getHealth()))
+                static_cast<uint32_t>(std::max(0, health->getCurrent()))
             });
         return true;
     }

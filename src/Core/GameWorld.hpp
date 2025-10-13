@@ -26,7 +26,6 @@ namespace sw::core
         GameMap _map;
         EventLog _eventLog;
         uint64_t _currentTick{0};
-        
         // keep units in order of creation
         std::vector<std::unique_ptr<IUnit>> _units;
         
@@ -115,7 +114,7 @@ namespace sw::core
                     UnitId id = (*it)->getId();
                     Position pos = (*it)->getPosition();
                     
-                    _map.removeUnit(pos);
+                    _map.removeUnit(pos, id);
                     _unitById.erase(id);
                     
                     _eventLog.log(_currentTick, io::UnitDied{id.value});
@@ -141,8 +140,25 @@ namespace sw::core
 
         IUnit* findUnitAt(const Position& pos) override
         {
-            UnitId id = _map.getUnitAt(pos);
-            return id.isValid() ? _unitById[id] : nullptr;
+            auto ids = _map.getAllUnitsAt(pos);
+            for(auto id : ids){
+                if(id.isValid() && !_unitById[id]->has_property(Unitproperty::Transparent)){
+                    return _unitById[id];
+                }
+            }
+            return nullptr;
+        }
+
+        std::vector<IUnit*> findUnitsAt(const Position& pos) override
+        {
+            std::vector<IUnit*> res;
+            auto ids = _map.getAllUnitsAt(pos);
+            for(auto id : ids){
+                if(id.isValid() && !_unitById[id]->has_property(Unitproperty::Transparent)){
+                    res.push_back(_unitById[id]);
+                }
+            }
+            return res;
         }
 
         IUnit* findUnitById(UnitId id) override
@@ -157,7 +173,7 @@ namespace sw::core
             
             for (auto& unit : _units)
             {
-                if (!unit->isDead())
+                if (!unit->isDead() && !unit->has_property(Unitproperty::Transparent))
                 {
                     Position unitPos = unit->getPosition();
                     if (unitPos.distanceTo(center) <= range && unitPos != center)

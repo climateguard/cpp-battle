@@ -6,7 +6,7 @@
 #include "Action/AttackAction.hpp"
 #include "Action/MoveAction.hpp"
 #include <algorithm>
-
+#include "Component/HealthComponent.hpp"
 namespace sw::feature
 {
     // shoots from a distance or attacks in close combat
@@ -26,7 +26,7 @@ namespace sw::feature
             , _range(range)
         {
              using namespace sw::feature::action;
-
+        addComponent(std::make_unique<HealthComponent>(health));
         // ranged attack
         addAction(std::make_unique<AttackAction>(_agility, 2, _range, true));
 
