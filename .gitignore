@@ -578,3 +578,4 @@ FodyWeavers.xsd
 .idea
 
 /build/
+/.vscode/
