@@ -30,12 +30,12 @@ public:
     bool execute(sw::core::IUnit& self, sw::core::IGameContext& ctx) override {
         if (self.isDead() || _damage == 0)
             return false;
-
+        sw::core::GameMap gmap = ctx.getMap();
         const auto& pos = self.getPosition();
 
         // skip, if need
         if (_skipIfEnemiesNearby) {
-            auto adj = ctx.findUnitsInRange(pos, 1);
+            auto adj = gmap.findUnitsInRange(pos, 1);
             for (auto* u : adj)
                 if (u && !u->isDead() && u->getId() != self.getId())
                     return false;
@@ -43,7 +43,7 @@ public:
 
         // collect targets in range
         std::vector<sw::core::IUnit*> targets;
-        auto all = ctx.findUnitsInRange(pos, _maxRange);
+        auto all = gmap.findUnitsInRange(pos, _maxRange);
         for (auto* u : all) {
             if (!u || u->isDead() || u->getId() == self.getId())
                 continue;

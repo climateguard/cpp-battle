@@ -20,7 +20,7 @@ namespace sw::core
         std::unordered_map<std::type_index, std::unique_ptr<IComponent>> _components;
         std::vector<std::unique_ptr<IAction>> _actions;
     public:
-        BaseUnit(UnitId id, Position pos, int32_t health)
+        BaseUnit(UnitId id, Position pos)
             : _id(id), _position(pos)
         {}
 

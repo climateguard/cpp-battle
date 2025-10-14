@@ -17,7 +17,7 @@ public:
               sw::core::Position pos,
               uint32_t health,
               uint32_t strength)
-        : BaseUnit(id, pos, static_cast<int32_t>(health)),
+        : BaseUnit(id, pos),
           _strength(strength)
     {
         using namespace sw::feature::action;

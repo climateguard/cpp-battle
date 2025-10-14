@@ -3,10 +3,15 @@
 #include "Position.hpp"
 #include "UnitId.hpp"
 #include <unordered_map>
+#include <vector>
+#include <algorithm>
 #include <cstdint>
 
 namespace sw::core
 {
+    class IUnit;
+    enum class Unitproperty;
+
     // Game map
     class GameMap
     {
@@ -14,8 +19,10 @@ namespace sw::core
         uint32_t _width{};
         uint32_t _height{};
         
-        // Position -> список UnitId
+        // Position -> UnitId
         std::unordered_map<uint64_t, std::vector<UnitId>> _positionToUnits;
+        
+        std::unordered_map<UnitId, IUnit*> _unitById;
 
     public:
         GameMap() = default;
@@ -30,7 +37,36 @@ namespace sw::core
             return pos.x < _width && pos.y < _height;
         }
 
-        // place unit on game map
+        void registerUnit(UnitId id, IUnit* unit)
+        {
+            _unitById[id] = unit;
+        }
+
+        void unregisterUnit(UnitId id)
+        {
+            _unitById.erase(id);
+        }
+
+        bool canPlaceUnit(const Position& pos, UnitId id)
+        {
+            auto* unit = findUnitById(id);
+            if (!unit)
+                return false;
+
+            if (!unit->has_property(Unitproperty::NotOccupy))
+                return true;
+
+            auto ids = getAllUnitsAt(pos);
+            for (auto existingId : ids)
+            {
+                auto* existingUnit = findUnitById(existingId);
+                if (existingUnit && !existingUnit->has_property(Unitproperty::NotOccupy))
+                    return false;
+            }
+
+            return true;
+        }
+
         void placeUnit(const Position& pos, UnitId id)
         {
             _positionToUnits[positionToKey(pos)].push_back(id);
@@ -56,12 +92,58 @@ namespace sw::core
             placeUnit(to, id);
         }
 
-        UnitId getUnitAt(const Position& pos, UnitId id) const
+        IUnit* findUnitAt(const Position& pos)
         {
-            auto it = _positionToUnits.find(positionToKey(pos));
-            if (it != _positionToUnits.end() && !it->second.empty())
-                return it->second[0];
-            return UnitId{0};
+            auto ids = getAllUnitsAt(pos);
+            for(auto id : ids){
+                if(id.isValid() && !_unitById[id]->has_property(Unitproperty::Transparent)){
+                    return _unitById[id];
+                }
+            }
+            return nullptr;
+        }
+
+        std::vector<IUnit*> findUnitsAt(const Position& pos)
+        {
+            std::vector<IUnit*> res;
+            auto ids = getAllUnitsAt(pos);
+            for(auto id : ids){
+                if(id.isValid() && !_unitById[id]->has_property(Unitproperty::Transparent)){
+                    res.push_back(_unitById[id]);
+                }
+            }
+            return res;
+        }
+
+        //return all units, include Transparent
+        IUnit* findUnitById(UnitId id)
+        {
+            auto it = _unitById.find(id);
+            return (it != _unitById.end()) ? it->second : nullptr;
+        }
+
+        std::vector<IUnit*> findUnitsInRange(const Position& center, uint32_t range)
+        {
+            std::vector<IUnit*> result;
+            
+            for (auto& [id, unit] : _unitById)
+            {
+                if (!unit->isDead() && !unit->has_property(Unitproperty::Transparent))
+                {
+                    Position unitPos = unit->getPosition();
+                    if (unitPos.distanceTo(center) <= range && unitPos != center)
+                    {
+                        result.push_back(unit);
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        std::vector<IUnit*> findAdjacentUnits(const Position& pos)
+        {
+            return findUnitsInRange(pos, 1);
         }
 
         std::vector<UnitId> getAllUnitsAt(const Position& pos) const

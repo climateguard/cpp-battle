@@ -11,7 +11,8 @@
 namespace sw::core
 {
     enum class Unitproperty {
-        Transparent
+        Transparent, //Can't be attacked
+        NotOccupy //Not occupy map field
     };
     class IGameContext;
 

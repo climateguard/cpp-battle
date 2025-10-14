@@ -15,7 +15,7 @@ public:
          {}
 
     bool execute(sw::core::IUnit& self, sw::core::IGameContext& ctx) override {
-       
+        sw::core::GameMap gmap = ctx.getMap();
         if (self.isDead())
             return false;
         auto _target = self.getMarchTarget();
@@ -33,7 +33,7 @@ public:
         auto next = current.stepTowards(_target);
 
         // free position?
-        if (!ctx.isValidPosition(next) || ctx.findUnitAt(next) != nullptr)
+        if (!gmap.isValidPosition(next) || gmap.findUnitAt(next) != nullptr)
             return false;
 
         // execute move

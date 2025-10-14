@@ -20,7 +20,7 @@ namespace sw::feature
     public:
         Hunter(core::UnitId id, core::Position pos, uint32_t health, 
                uint32_t agility, uint32_t strength, uint32_t range)
-            : BaseUnit(id, pos, static_cast<int32_t>(health))
+            : BaseUnit(id, pos)
             , _agility(agility)
             , _strength(strength)
             , _range(range)
